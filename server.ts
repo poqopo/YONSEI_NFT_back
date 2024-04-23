@@ -73,7 +73,7 @@ async function makeNFT(address: string, uri: string, _nonce: string) {
     return true;
   } catch (e) {
     console.log(e);
-    return e;
+    return false;
   }
 }
 
@@ -88,12 +88,14 @@ app.get(
   async (req: Request<{}, {}, {}, Params>, res: Response, next) => {
     try {
       if (req.query.address)
-        makeNFT(req.query.address, req.query.tokenuri, nonce.toString()).then(
-          (result) => {
-            res.status(200);
-            res.send(result);
-          }
-        );
+        await makeNFT(
+          req.query.address,
+          req.query.tokenuri,
+          nonce.toString()
+        ).then((result) => {
+          res.status(200);
+          res.send(result);
+        });
       console.log("Minted", nonce);
       nonce += 1;
     } catch (error: any) {
@@ -131,4 +133,4 @@ app.use((req: Request<{}, {}, {}, Params>, res: Response, next) => {
 });
 
 //서버 가동 시 실행하는 동작이다.
-app.listen(PORT, () => console.log("server running.."));
+app.listen(PORT, () => console.log("server running..", PORT));
