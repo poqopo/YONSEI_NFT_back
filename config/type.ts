@@ -12,7 +12,7 @@ export interface userInfo extends RowDataPacket {
     maxMintCount: number
     nftCount: number
     friend : string
-    participteEvent : number
+    participateEvent : number
     claim : number
 }
 
@@ -26,4 +26,11 @@ export interface claimInfo extends RowDataPacket {
   claim : number
 }
 
+export interface friendInfo extends RowDataPacket {
+  address: string
+  studentNumber: string
+  friend : string
+  participateEvent : number
+  claim : number
+}
 
