@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction, response } from "express";
 import pool from "../config/database";
 import { FieldPacket } from "mysql2/promise";
-import { userInfo, Params, nftInfo,  nft } from "../config/type";
+import { UserInfo, Params, NFTInfo,  NFT } from "../config/type";
 
 export default class UserController {
 
@@ -15,7 +15,7 @@ export default class UserController {
       WHERE userAddress = ?
       `
 
-      const [results]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(query, [userAddress]);
+      const [results]: [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(query, [userAddress]);
       res.status(200).json({ results });
     } catch (error : any) {
       console.error('Error while writing NFT info:', error.message); // 콘솔에 에러 메시지 출력
@@ -34,7 +34,7 @@ export default class UserController {
       WHERE studentNumber = ?
       `
   
-      const [results]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(query, [studentNumber]);
+      const [results]: [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(query, [studentNumber]);
       res.status(200).json({ results });
     } catch (error : any) {
       console.error('Error while writing NFT info:', error.message); // 콘솔에 에러 메시지 출력
@@ -48,7 +48,7 @@ export default class UserController {
       const { userAddress, studentNumber, major } = req.body; 
       const conn = await pool();
   
-      const [studentResults] : [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(
+      const [studentResults] : [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
         `SELECT * 
         FROM MYYONSEINFT.userInfo 
         WHERE studentNumber = ?`
@@ -58,7 +58,7 @@ export default class UserController {
         return res.status(403).json({result : "이미 사용된 학번입니다."});
       }
   
-      await conn.query<nftInfo[]>(
+      await conn.query<NFTInfo[]>(
         `INSERT INTO MYYONSEINFT.userInfo
         (userAddress, studentNumber, maxMintableNumber, ownedNFTNumber, friendAddress, major)
         VALUES(?, ?, 1, 0, '', ?);`
@@ -81,7 +81,7 @@ export default class UserController {
       //CHECK Do NOT HAVE FRIEND
   
       // 쿼리 실행 및 결과 타입 명시
-      const [meResult]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(
+      const [meResult]: [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
         `SELECT * 
         FROM MYYONSEINFT.userInfo 
         WHERE userAddress = ?`
@@ -98,7 +98,7 @@ export default class UserController {
       //CHECK Do NOT HAVE FRIEND
   
       // 쿼리 실행 및 결과 타입 명시
-      const [freindResult]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(
+      const [freindResult]: [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
         `SELECT friendAddress 
         FROM userInfo 
         WHERE studentNumber = ?`
@@ -112,7 +112,7 @@ export default class UserController {
         return res.status(403).json({result : "친구가 이미 친구 이벤트에 참가하셨습니다."})
       }
   
-      const [results]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(
+      const [results]: [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
         `SELECT a.tokenURI, a.ownerAddress as myAddress, b.ownerAddress as friendAddress
         FROM NFTs a
         JOIN NFTs b ON a.tokenURI = b.tokenURI AND a.ownerAddress != b.ownerAddress
@@ -126,10 +126,10 @@ export default class UserController {
           const friendUserAddress = results[0].friendAddress;
   
           const meQuery = `UPDATE userInfo SET friendAddress = ? WHERE userAddress = ?`
-          await conn.query<userInfo[]>(meQuery, [friendUserAddress, userAddress]);
+          await conn.query<UserInfo[]>(meQuery, [friendUserAddress, userAddress]);
   
           const friendQuery = `UPDATE userInfo SET friendAddress = ? WHERE userAddress = ?`
-          await conn.query<userInfo[]>(friendQuery, [userAddress, friendUserAddress]);
+          await conn.query<UserInfo[]>(friendQuery, [userAddress, friendUserAddress]);
           return res.status(200).json({ result : "이벤트 참여 완료!"});
         } catch(e) {
           return res.status(403).json({ result : "ERROR가 발생하였습니다."});

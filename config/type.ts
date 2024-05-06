@@ -6,7 +6,7 @@ export interface Params {
   }
 
   
-export interface userInfo extends RowDataPacket {
+export interface UserInfo extends RowDataPacket {
     userAddress: string
     studentNumber: string
     maxMintableNumber: number
@@ -15,7 +15,7 @@ export interface userInfo extends RowDataPacket {
     major : string
 }
 
-export interface nft extends RowDataPacket {
+export interface NFT extends RowDataPacket {
   txId : string
   ownerAddress : string
   major : string
@@ -25,7 +25,7 @@ export interface nft extends RowDataPacket {
   collectionAddress : string
 }
 
-export interface nftInfo extends RowDataPacket {
+export interface NFTInfo extends RowDataPacket {
   major: string
   tokenURI: string
   nftName: string

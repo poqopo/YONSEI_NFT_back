@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction, response } from "express";
 import pool from "../config/database";
 import { FieldPacket } from "mysql2/promise";
-import { userInfo, Params, nftInfo, nft } from "../config/type";
+import { UserInfo, Params, NFTInfo, NFT } from "../config/type";
 import dotenv from "dotenv";
 import Web3 from "web3";
 import contractAbi from "../abi.json";
@@ -64,7 +64,7 @@ export default class NFTController {
       const { userAddress } = req.query;
       const conn = await pool(); // 데이터베이스 연결을 비동기로 처리
   
-      const [results]: [nft[], FieldPacket[]] = await conn.query<nft[]>(
+      const [results]: [NFT[], FieldPacket[]] = await conn.query<NFT[]>(
         `SELECT NFTs.tokenURI, NFTInfo.nftName, NFTInfo.description 
         FROM MYYONSEINFT.NFTs
         JOIN MYYONSEINFT.NFTInfo 
@@ -84,7 +84,7 @@ export default class NFTController {
     try {
       const conn = await pool(); // 데이터베이스 연결을 비동기로 처리
   
-      const [results]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(
+      const [results]: [NFTInfo[], FieldPacket[]] = await conn.query<NFTInfo[]>(
         `SELECT * 
         FROM MYYONSEINFT.NFTInfo;`
       );
@@ -102,7 +102,7 @@ export default class NFTController {
       const { major, tokenURI, nftName, description } = req.body; 
       const conn = await pool();
 
-      await conn.query<nftInfo[]>(
+      await conn.query<NFTInfo[]>(
         `INSERT INTO MYYONSEINFT.NFTInfo (major, tokenURI, nftName, description)
         VALUES (?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
@@ -129,7 +129,7 @@ export default class NFTController {
           return res.status(400).json({result : "NOT VALID ADDRESS"});
       }
 
-      const [userResults] : [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(
+      const [userResults] : [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
         `SELECT maxMintableNumber, ownedNFTNumber 
         FROM MYYONSEINFT.userInfo 
         WHERE userAddress = ?`
@@ -140,7 +140,7 @@ export default class NFTController {
           return res.status(403).json({result : "이미 팜희가 너무 많아요!"});
       }
 
-      const [results] : [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(
+      const [results] : [NFTInfo[], FieldPacket[]] = await conn.query<NFTInfo[]>(
         `SELECT * 
         FROM MYYONSEINFT.NFTInfo 
         WHERE major = ?`
@@ -165,7 +165,7 @@ export default class NFTController {
             VALUES(?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?);`
           , [tx, userAddress, major, tokenuri, tokenId, process.env.CONTRACT]);
           try{
-            
+
             await conn.query(
               `UPDATE MYYONSEINFT.userInfo 
               SET ownedNFTNumber = ${userResults[0].ownedNFTNumber +1 } 
