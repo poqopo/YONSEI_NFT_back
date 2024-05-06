@@ -122,21 +122,6 @@ app.get('/getUserNFTs', async (req: Request, res: Response, next: NextFunction) 
 }
 });
 
-app.get('/getEventUsers', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const conn = await pool(); // 데이터베이스 연결을 비동기로 처리
-    const query = `SELECT * FROM MYYONSEINFT.userInfo WHERE participateEvent = 1`
-
-    const [results]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(query);
-
-    res.status(200).json({ results });
-} catch (error : any) {
-  console.error('Error while calling User info:', error.message); // 콘솔에 에러 메시지 출력
-  res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
-  next(error);
-}
-});
-
 app.get('/getNFTInfos', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const conn = await pool(); // 데이터베이스 연결을 비동기로 처리
@@ -195,36 +180,6 @@ app.post('/addNewUser', async (req: Request, res: Response, next: NextFunction) 
   }
 });
 
-
-app.post('/tattooClaim', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const conn = await pool();
-    const { address } = req.body;
-    const checkQuery = `SELECT * FROM MYYONSEINFT.user WHERE address = '${address}'`
-    const [result]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(checkQuery);
-
-    if (result.length > 0) {
-      if (result[0].participateEvent === 1 ) {
-        if (result[0].claim === 1) {
-          res.status(803).json({ result: "ALREADY CLAIMED!" })
-        } else {
-          const query = `UPDATE MYYONSEINFT.user SET claim = 1 WHERE address = ?`;
-          await conn.query(query, [address]);
-          res.status(200).json({ result: "SUCCESS" })
-        }
-      } else {
-        res.status(802).json({ result: "YOU DIDN'T PARTICIPATE EVENT" })
-      }
-    } else {
-      res.status(801).json({ result: "YOU DIDN'T MINT NFT" })
-    }
-  } catch (error: any) {
-    console.error('Error while writing NFT info:', error.message);
-    res.status(800).json({ result: "FAIL", message: error.message })
-    next(error);
-  }
-
-});
 
 app.post('/mint', async (req: Request, res: Response, next: NextFunction) => {
   try {
