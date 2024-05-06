@@ -69,11 +69,12 @@ export default class NFTController {
         WHERE NFTs.ownerAddress = ?;`
       , [userAddress]);
   
+      conn.end();
       return res.status(200).json({ nftsResults });
     } catch (error : any) {
       console.error('Error while writing NFT info:', error.message); // 콘솔에 에러 메시지 출력
-      return res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
       next(error);
+      return res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
     }
   }
   
@@ -86,11 +87,12 @@ export default class NFTController {
         FROM MYYONSEINFT.NFTInfo;`
       );
   
+      conn.end();
       return res.status(200).json({ results });
     } catch (error : any) {
       console.error('Error while calling User info:', error.message); // 콘솔에 에러 메시지 출력
-      return res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
       next(error);
+      return res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
     }
   }
 
@@ -106,11 +108,12 @@ export default class NFTController {
         tokenURI = VALUES(tokenURI), nftName = VALUES(nftName), description= VALUES(description);`
       , [major, tokenURI, nftName, description]); // 파라미터화된 쿼리 사용
 
+      conn.end();
       return res.status(200).json({ result : "SUCCESS" });
     } catch (error : any) {
       console.error('Error while writing NFT info:', error.message); // 콘솔에 에러 메시지 출력
-      return res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
       next(error);
+      return res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
     }
   }
 
@@ -170,6 +173,7 @@ export default class NFTController {
           WHERE userAddress=?;`
         , [userAddress]);
 
+        conn.end();
         return res.status(200).json({ result : "SUCCESS", txId : tx, url : tokenuri});
       });
       console.log("Minted", nonce);

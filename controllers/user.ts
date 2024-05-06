@@ -15,11 +15,13 @@ export default class UserController {
         FROM MYYONSEINFT.userInfo 
         WHERE userAddress = ?`
       , [userAddress]);
-      res.status(200).json({ results });
+
+      conn.end();
+      return res.status(200).json({ results });
     } catch (error : any) {
       console.error('Error while writing NFT info:', error.message); // 콘솔에 에러 메시지 출력
-      res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
       next(error);
+      return res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
     }
   }
 
@@ -33,11 +35,13 @@ export default class UserController {
         FROM MYYONSEINFT.userInfo 
         WHERE studentNumber = ?`
       , [studentNumber]);
-      res.status(200).json({ results });
+
+      conn.end();
+      return res.status(200).json({ results });
     } catch (error : any) {
       console.error('Error while writing NFT info:', error.message); // 콘솔에 에러 메시지 출력
-      res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
       next(error);
+      return res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
     }
   }
 
@@ -68,11 +72,12 @@ export default class UserController {
         VALUES(?, ?, 1, 0, ?, ?);`
       , [userAddress, studentNumber, null, major]); // userInfo 추가 쿼리
   
-      res.status(200).json({ result : "SUCCESS" });
+      conn.end();
+      return res.status(200).json({ result : "SUCCESS" });
     } catch (error : any) {
       console.error('Error while writing userinfo:', error.message); // 콘솔에 에러 메시지 출력
-      res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
       next(error);
+      return res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
     }
   }
   
@@ -162,10 +167,11 @@ export default class UserController {
         WHERE userAddress = ?`
       , [myUserInfo.userAddress, friendUserInfo.userAddress]);
 
+      conn.end();
       return res.status(200).json({ result : "이벤트 참여 완료!"});
     } catch (error: any) {
-      res.status(800).json({ result: "FAIL", message: error.message });
       next(error);
+      return res.status(800).json({ result: "FAIL", message: error.message });
     }
   }
 }
