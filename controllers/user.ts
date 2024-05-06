@@ -9,13 +9,12 @@ export default class UserController {
     try {
       const { userAddress } = req.query;
       const conn = await pool(); // 데이터베이스 연결을 비동기로 처리
-      const query = `
-      SELECT * 
-      FROM MYYONSEINFT.userInfo 
-      WHERE userAddress = ?
-      `
 
-      const [results]: [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(query, [userAddress]);
+      const [results]: [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
+        `SELECT * 
+        FROM MYYONSEINFT.userInfo 
+        WHERE userAddress = ?`
+      , [userAddress]);
       res.status(200).json({ results });
     } catch (error : any) {
       console.error('Error while writing NFT info:', error.message); // 콘솔에 에러 메시지 출력
@@ -28,13 +27,12 @@ export default class UserController {
     try {
       const { studentNumber } = req.query;
       const conn = await pool(); // 데이터베이스 연결을 비동기로 처리
-      const query = `
-      SELECT * 
-      FROM MYYONSEINFT.userInfo 
-      WHERE studentNumber = ?
-      `
   
-      const [results]: [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(query, [studentNumber]);
+      const [results]: [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
+        `SELECT * 
+        FROM MYYONSEINFT.userInfo 
+        WHERE studentNumber = ?`
+      , [studentNumber]);
       res.status(200).json({ results });
     } catch (error : any) {
       console.error('Error while writing NFT info:', error.message); // 콘솔에 에러 메시지 출력
