@@ -46,22 +46,27 @@ export default class UserController {
       const { userAddress, studentNumber, major } = req.body; 
       const conn = await pool();
   
-      const [studentResults] : [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
+      const [userInfos] : [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
         `SELECT * 
         FROM MYYONSEINFT.userInfo 
         WHERE studentNumber = ?`
       , [studentNumber]);
 
-      if (studentResults.length !== 0  && studentResults[0].address !== userAddress) {
+      if (userInfos.length > 1) {
+        return res.status(500).json({result: "2개 이상 있으면 안 되는데... 이상한데...?"}); // 일단 status code 뭐로 할지 몰라서 500대로...
+      }
+      if (userInfos.length === 1 && userInfos[0].studentNumber === studentNumber) {
         return res.status(403).json({result : "이미 사용된 학번입니다."});
+      }
+      if (userInfos.length === 1 && userInfos[0].userAddress === userAddress) {
+        return res.status(403).json({result : "이미 사용된 지갑 주소입니다."});
       }
   
       await conn.query<NFTInfo[]>(
         `INSERT INTO MYYONSEINFT.userInfo
         (userAddress, studentNumber, maxMintableNumber, ownedNFTNumber, friendAddress, major)
-        VALUES(?, ?, 1, 0, '', ?);`
-      , [userAddress, studentNumber, major]); // 파라미터화된 쿼리 사용
-      // await conn.query<nftInfo[]>(query, [userAddress, studentNumber, major, userAddress, userAddress]); // 파라미터화된 쿼리 사용
+        VALUES(?, ?, 1, 0, ?, ?);`
+      , [userAddress, studentNumber, null, major]); // userInfo 추가 쿼리
   
       res.status(200).json({ result : "SUCCESS" });
     } catch (error : any) {
@@ -74,69 +79,91 @@ export default class UserController {
   async registerFriend(req: Request, res: Response, next: NextFunction) {
     try {
       const conn = await pool();
-      const { userAddress, friendNumber } = req.body;
+      const { userAddress, friendStudentNumber } = req.body;
+
+      // friendStudentNumber 학번 규격 맞는지 체크 -> 이건 FE에서 검토 후 보내기??
   
-      //CHECK Do NOT HAVE FRIEND
-  
-      // 쿼리 실행 및 결과 타입 명시
-      const [meResult]: [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
+      // 자신의 user info 체크
+      const [myUserInfoResult]: [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
         `SELECT * 
         FROM MYYONSEINFT.userInfo 
         WHERE userAddress = ?`
       , [userAddress]);
 
-      // 결과 배열에서 첫 번째 요소의 friend 속성 접근
-      if (meResult.length === 0) {
+      const myUserInfo = myUserInfoResult[0]
+      if (myUserInfo === undefined) {
         return res.status(403).json({result : "USER 등록이 안된 사용자입니다."})
       }
-      if (meResult[0].friendAddress !== null) {
-        return res.status(403).json({result : "이미 친구 이벤트에 참가하셨습니다."})
+      if (myUserInfo.friendAddress !== null) {
+        return res.status(403).json({result : "이미 친구 이벤트에 참여하였습니다."})
       }
   
-      //CHECK Do NOT HAVE FRIEND
-  
-      // 쿼리 실행 및 결과 타입 명시
-      const [freindResult]: [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
-        `SELECT friendAddress 
-        FROM userInfo 
+      // 친구의 user info 체크
+      const [friendUserInfoResult]: [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
+        `SELECT * 
+        FROM MYYONSEINFT.userInfo 
         WHERE studentNumber = ?`
-      , [friendNumber]);
-  
-      // 결과 배열에서 첫 번째 요소의 friend 속성 접근
-      if (freindResult.length === 0) {
-        return res.status(403).json({result : "친구가 USER 등록이 안되었습니다."})
-      }
-      if (freindResult[0].friendAddress !== null) {
-        return res.status(403).json({result : "친구가 이미 친구 이벤트에 참가하셨습니다."})
-      }
-  
-      const [results]: [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
-        `SELECT a.tokenURI, a.ownerAddress as myAddress, b.ownerAddress as friendAddress
-        FROM NFTs a
-        JOIN NFTs b ON a.tokenURI = b.tokenURI AND a.ownerAddress != b.ownerAddress
-        JOIN userInfo me ON me.userAddress = a.ownerAddress
-        JOIN userInfo friend ON friend.userAddress = b.ownerAddress
-        WHERE me.userAddress = ? AND friend.studentNumber = ?`
-    , [userAddress, friendNumber]);
+      , [friendStudentNumber]);
 
-      if (results.length > 0) {
-        try {
-          const friendUserAddress = results[0].friendAddress;
-  
-          const meQuery = `UPDATE userInfo SET friendAddress = ? WHERE userAddress = ?`
-          await conn.query<UserInfo[]>(meQuery, [friendUserAddress, userAddress]);
-  
-          const friendQuery = `UPDATE userInfo SET friendAddress = ? WHERE userAddress = ?`
-          await conn.query<UserInfo[]>(friendQuery, [userAddress, friendUserAddress]);
-          return res.status(200).json({ result : "이벤트 참여 완료!"});
-        } catch(e) {
-          return res.status(403).json({ result : "ERROR가 발생하였습니다."});
-        }
-      } else {
-        return res.status(403).json({ result: "겹치는 NFT가 없습니다." });
+      const friendUserInfo = friendUserInfoResult[0]
+      if (friendUserInfo === undefined) {
+        return res.status(403).json({result : "친구가 USER 등록이 안 되었습니다."})
       }
+      if (friendUserInfo.friendAddress !== null) {
+        return res.status(403).json({result : "친구가 이미 친구 이벤트에 참여하였습니다."})
+      }
+
+      // 독팜희를 분양했는지 체크
+      const [myNFTs]: [NFT[], FieldPacket[]] = await conn.query<NFT[]>(
+        `SELECT *
+        FROM MYYONSEINFT.NFTs
+        WHERE ownerAddress = ?`
+      , [myUserInfo.userAddress]);
+
+      if (myNFTs.length === 0) {
+        return res.status(403).json({result : "나의 독팜희가 없습니다. 새로 독팜희를 분양하세요."})
+      }
+
+      const [friendNFTs]: [NFT[], FieldPacket[]] = await conn.query<NFT[]>(
+        `SELECT *
+        FROM MYYONSEINFT.NFTs
+        WHERE ownerAddress = ?`
+      , [friendUserInfo.userAddress]);
+
+      if (friendNFTs.length === 0) {
+        return res.status(403).json({result : "친구의 독팜희가 없습니다. 새로 독팜희를 분양하라고 하세요."})
+      }
+  
+      // 내가 가진 NFT와 친구가 가진 NFT 중에서 같은 NFT가 있는지 확인
+      const [sameNFTsResults]: [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
+        `SELECT myNFTs.tokenURI, myNFTs.ownerAddress, friendNFTs.ownerAddress
+        FROM NFTs myNFTs
+        JOIN NFTs friendNFTs ON myNFTs.tokenURI = friendNFTs.tokenURI AND myNFTs.ownerAddress != friendNFTs.ownerAddress
+        JOIN userInfo myInfo ON myInfo.userAddress = myNFTs.ownerAddress
+        JOIN userInfo friendInfo ON friendInfo.userAddress = friendNFTs.ownerAddress
+        WHERE myInfo.userAddress = ? AND friendInfo.studentNumber = ?`
+      , [myUserInfo.userAddress, friendStudentNumber]);
+
+      if (sameNFTsResults.length === 0) {
+        return res.status(403).json({ result: "친구와 겹치는 NFT가 없습니다." });
+      }
+
+      // 내 userInfo에 친구를 friend로 등록
+      await conn.query<UserInfo[]>(
+        `UPDATE userInfo 
+        SET friendAddress = ? 
+        WHERE userAddress = ?`
+      , [friendUserInfo.userAddress, myUserInfo.userAddress]);
+
+      // 친구 userInfo에 나를 friend로 등록
+      await conn.query<UserInfo[]>(
+        `UPDATE userInfo 
+        SET friendAddress = ? 
+        WHERE userAddress = ?`
+      , [myUserInfo.userAddress, friendUserInfo.userAddress]);
+
+      return res.status(200).json({ result : "이벤트 참여 완료!"});
     } catch (error: any) {
-      console.error('Error while writing NFT info:', error.message);
       res.status(800).json({ result: "FAIL", message: error.message });
       next(error);
     }
