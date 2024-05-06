@@ -32,7 +32,3 @@ export interface nftInfo extends RowDataPacket {
   description: string
 }
 
-export interface claimInfo extends RowDataPacket {
-  claim : number
-}
-
