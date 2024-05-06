@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction, response } from "express";
 import pool from "../config/database";
 import { FieldPacket } from "mysql2/promise";
-import { userInfo, Params, nftInfo, friendInfo, nft } from "../config/type";
+import { userInfo, Params, nftInfo, nft } from "../config/type";
 import dotenv from "dotenv";
 import Web3 from "web3";
 import contractAbi from "../abi.json";
@@ -97,6 +97,7 @@ export default class NFTController {
       next(error);
     }
   }
+  
   async addNFTInfo(req: Request, res: Response, next: NextFunction) {
     try {
       const { major, tokenURI, nftName, description } = req.body; 
@@ -149,7 +150,8 @@ export default class NFTController {
       if (results.length === 0) {
           return res.status(404).json({result : "해당 학과는 준비중입니다."});
       }
-      let nftId = getRandom(results.length);
+      const nftCount = results.length
+      let nftId = getRandom(nftCount);
       const tokenuri = results[nftId-1].tokenURI;
 
       try {
@@ -163,7 +165,11 @@ export default class NFTController {
           `;
           await conn.query(nftQuery, [tx, userAddress, major, tokenuri, tokenId, process.env.CONTRACT]);
           try{
-            const userQuery = `UPDATE MYYONSEINFT.userInfo SET ownedNFTNumber = ${userResults[0].ownedNFTNumber +1 } WHERE userAddress=?;`
+            const userQuery = `
+            UPDATE MYYONSEINFT.userInfo 
+            SET ownedNFTNumber = ${userResults[0].ownedNFTNumber +1 } 
+            WHERE userAddress=?;
+            `
             await conn.query(userQuery, [userAddress]);
             return res.status(200).json({ result : "SUCCESS", url : tokenuri});
           }catch(e) {

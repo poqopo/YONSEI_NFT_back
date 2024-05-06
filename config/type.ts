@@ -16,15 +16,20 @@ export interface userInfo extends RowDataPacket {
 }
 
 export interface nft extends RowDataPacket {
+  txId : string
+  ownerAddress : string
+  major : string
+  // nftName : string //이거 NFT 테이블에서 nftName 칼럼 추가해야 함
   tokenURI : string
-  nftName : string
-  description : string
+  tokenId : string
+  collectionAddress : string
 }
 
 export interface nftInfo extends RowDataPacket {
   major: string
-  baseURI: string
-  nftCount: number
+  tokenURI: string
+  nftName: string
+  description: string
 }
 
 export interface claimInfo extends RowDataPacket {

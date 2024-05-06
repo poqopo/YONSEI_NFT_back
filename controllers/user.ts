@@ -94,16 +94,16 @@ export default class UserController {
         return res.status(403).json({result : "이미 친구 이벤트에 참가하셨습니다."})
       }
   
-          //CHECK Do NOT HAVE FRIEND
+      //CHECK Do NOT HAVE FRIEND
       const friendQuery = `
       SELECT friendAddress 
       FROM userInfo 
       WHERE studentNumber = ?`;
   
-          // 쿼리 실행 및 결과 타입 명시
+      // 쿼리 실행 및 결과 타입 명시
       const [freindResult]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(friendQuery, [friendNumber]);
   
-          // 결과 배열에서 첫 번째 요소의 friend 속성 접근
+      // 결과 배열에서 첫 번째 요소의 friend 속성 접근
       if (freindResult.length === 0) {
         return res.status(403).json({result : "친구가 USER 등록이 안되었습니다."})
       }
