@@ -8,18 +8,13 @@ import contractAbi from "../abi.json";
 
 dotenv.config();
 
-function getRandom(max : number) {
-  return Math.floor(Math.random() * (max) + 1);
-}
-
 // https://sepolia.infura.io/v3/
 // https://polygon-mainnet.infura.io/v3/
-const web3 = new Web3(
-  `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_KEY}`
-);
+const web3 = new Web3(`https://polygon-mainnet.infura.io/v3/${process.env.INFURA_KEY}`);
 const privateKey = process.env.PRIVATE_KEY as string;
 const account = web3.eth.accounts.privateKeyToAccount(privateKey);
 web3.eth.accounts.wallet.add(privateKey);
+
 let nonce: number;
 (async () => {
   try {
@@ -29,6 +24,10 @@ let nonce: number;
     console.error("Error obtaining nonce:", error);
   }
 })();
+
+function getRandom(max : number) {
+  return Math.floor(Math.random() * (max) + 1);
+}
 
 async function makeNFT(address: string, uri: string, _nonce: string) {
   try {
@@ -44,9 +43,7 @@ async function makeNFT(address: string, uri: string, _nonce: string) {
     const result = await nftContract.methods.safeMint(address, uri).send({
       from: account.address,
       gas: `0x${gas.toString(16)}`,
-      gasPrice: `0x${Math.floor(parseInt(gasPrice.toString()) * 1.2).toString(
-        16
-      )}`,
+      gasPrice: `0x${Math.floor(parseInt(gasPrice.toString()) * 1.2).toString(16)}`,
       nonce: _nonce,
     });
 
@@ -72,10 +69,10 @@ export default class NFTController {
         WHERE NFTs.ownerAddress = ?;`
       , [userAddress]);
   
-      res.status(200).json({ nftsResults });
+      return res.status(200).json({ nftsResults });
     } catch (error : any) {
       console.error('Error while writing NFT info:', error.message); // 콘솔에 에러 메시지 출력
-      res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
+      return res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
       next(error);
     }
   }
@@ -89,10 +86,10 @@ export default class NFTController {
         FROM MYYONSEINFT.NFTInfo;`
       );
   
-      res.status(200).json({ results });
+      return res.status(200).json({ results });
     } catch (error : any) {
       console.error('Error while calling User info:', error.message); // 콘솔에 에러 메시지 출력
-      res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
+      return res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
       next(error);
     }
   }
@@ -109,10 +106,10 @@ export default class NFTController {
         tokenURI = VALUES(tokenURI), nftName = VALUES(nftName), description= VALUES(description);`
       , [major, tokenURI, nftName, description]); // 파라미터화된 쿼리 사용
 
-      res.status(200).json({ result : "SUCCESS" });
+      return res.status(200).json({ result : "SUCCESS" });
     } catch (error : any) {
       console.error('Error while writing NFT info:', error.message); // 콘솔에 에러 메시지 출력
-      res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
+      return res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
       next(error);
     }
   }
@@ -121,67 +118,62 @@ export default class NFTController {
     try {
       const conn = await pool();
       const { userAddress, major } = req.body;
-      // const { userAddress, major } = req.query;
 
-      console.log("userAddress", userAddress)
-      // Check Valid userAddress
       if (userAddress.length !== 42) {
           return res.status(400).json({result : "NOT VALID ADDRESS"});
       }
 
-      const [userResults] : [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
-        `SELECT maxMintableNumber, ownedNFTNumber 
+      const [userInfoResults] : [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
+        `SELECT * 
         FROM MYYONSEINFT.userInfo 
         WHERE userAddress = ?`
       , [userAddress]);
 
-      // Check MaxCap
-      if (userResults.length !== 0 && userResults[0].ownedNFTNumber >= userResults[0].maxMintableNumber) {
-          return res.status(403).json({result : "이미 팜희가 너무 많아요!"});
+      const userInfo = userInfoResults[0]
+
+      if (userInfo === undefined) {
+        return res.status(403).json({result : "USER 등록이 안된 사용자입니다."});
       }
 
-      const [results] : [NFTInfo[], FieldPacket[]] = await conn.query<NFTInfo[]>(
+      if (userInfo.ownedNFTNumber >= userInfo.maxMintableNumber) {
+        return res.status(403).json({result : "이미 팜희가 너무 많아요!"});
+      }
+
+      const [nftInfoResults] : [NFTInfo[], FieldPacket[]] = await conn.query<NFTInfo[]>(
         `SELECT * 
         FROM MYYONSEINFT.NFTInfo 
         WHERE major = ?`
       , [major]);
 
       // Check VALID MAJOR
-      if (results.length === 0) {
+      if (nftInfoResults.length === 0) {
           return res.status(404).json({result : "해당 학과는 준비중입니다."});
       }
-      const nftCount = results.length
-      let nftId = getRandom(nftCount);
-      const tokenuri = results[nftId-1].tokenURI;
+      const nftCount = nftInfoResults.length
+      const nftId = getRandom(nftCount);
+      const tokenuri = nftInfoResults[nftId-1].tokenURI;
 
-      try {
-        makeNFT(userAddress, tokenuri, nonce.toString()).then(async (result : any) =>{
-          const tx = result.logs[0].transactionHash
-          const tokenId = (Number(result.events.Transfer.returnValues.tokenId))
+      makeNFT(userAddress, tokenuri, nonce.toString())
+      .then(async (result : any) =>{
+        const tx = result.logs[0].transactionHash
+        const tokenId = (Number(result.events.Transfer.returnValues.tokenId))
 
-          await conn.query(
-            `INSERT INTO MYYONSEINFT.NFTs
-            (txId, ownerAddress, major, tokenURI, createdAt, tokenId, collectionAddress)
-            VALUES(?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?);`
-          , [tx, userAddress, major, tokenuri, tokenId, process.env.CONTRACT]);
-          try{
+        await conn.query(
+          `INSERT INTO MYYONSEINFT.NFTs
+          (txId, ownerAddress, tokenURI, createdAt, tokenId, collectionAddress)
+          VALUES(?, ?, ?, CURRENT_TIMESTAMP, ?, ?);`
+        , [tx, userAddress, tokenuri, tokenId, process.env.CONTRACT]);
 
-            await conn.query(
-              `UPDATE MYYONSEINFT.userInfo 
-              SET ownedNFTNumber = ${userResults[0].ownedNFTNumber +1 } 
-              WHERE userAddress=?;`
-            , [userAddress]);
-            return res.status(200).json({ result : "SUCCESS", url : tokenuri});
-          }catch(e) {
-            return res.status(405).json({ result : "유저 정보를 업데이트 하는 중 ERROR가 발생하였습니다."});
-          }
-        });
-        console.log("Minted", nonce);
-        nonce += 1;
-      } catch (error: any) {
-        console.error(error);
-        return res.status(500).json({ result: "SOMETHING WRONG IN TRANSACTION" });
-      }
+        await conn.query(
+          `UPDATE MYYONSEINFT.userInfo 
+          SET ownedNFTNumber = ${userInfo.ownedNFTNumber +1 } 
+          WHERE userAddress=?;`
+        , [userAddress]);
+
+        return res.status(200).json({ result : "SUCCESS", txId : tx, url : tokenuri});
+      });
+      console.log("Minted", nonce);
+      nonce += 1;
 
     } catch (error: any) {
       console.error(error);
