@@ -6,6 +6,7 @@ import Web3 from "web3";
 import { FieldPacket } from "mysql2/promise";
 import pool from "./config/database";
 import { userInfo, Params, nftInfo, friendInfo, nft } from "./config/type";
+import UserController from "./controllers/user"
 
 dotenv.config();
 
@@ -16,6 +17,9 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+
+const userController = new UserController();
+
 
 
 // https://sepolia.infura.io/v3/
@@ -74,43 +78,9 @@ app.get("/", (req, res, next) => {
   });
 });
 
-app.get('/getUserByAddress', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { userAddress } = req.query;
-    const conn = await pool(); // 데이터베이스 연결을 비동기로 처리
-    const query = `
-    SELECT * 
-    FROM MYYONSEINFT.userInfo 
-    WHERE userAddress = ?
-    `
+app.get('/getUserByAddress', userController.getUserByAddress)
 
-    const [results]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(query, [userAddress]);
-    res.status(200).json({ results });
-} catch (error : any) {
-  console.error('Error while writing NFT info:', error.message); // 콘솔에 에러 메시지 출력
-  res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
-  next(error);
-}
-});
-
-app.get('/getUserByNumber', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { studentNumber } = req.query;
-    const conn = await pool(); // 데이터베이스 연결을 비동기로 처리
-    const query = `
-    SELECT * 
-    FROM MYYONSEINFT.userInfo 
-    WHERE studentNumber = ?
-    `
-
-    const [results]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(query, [studentNumber]);
-    res.status(200).json({ results });
-} catch (error : any) {
-  console.error('Error while writing NFT info:', error.message); // 콘솔에 에러 메시지 출력
-  res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
-  next(error);
-}
-});
+app.get('/getUserByNumber', userController.getUserByNumber)
 
 app.get('/getUserNFTs', async (req: Request, res: Response, next: NextFunction) => {
   try {
