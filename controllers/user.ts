@@ -48,22 +48,22 @@ export default class UserController {
       const { userAddress, studentNumber, major } = req.body; 
       const conn = await pool();
   
-        // Check studentNumber
-      const studentQuery = `
-      SELECT * 
-      FROM MYYONSEINFT.userInfo 
-      WHERE studentNumber = ?
-      `
-        const [studentResults] : [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(studentQuery, [studentNumber]);
-        if (studentResults.length !== 0  && studentResults[0].address !== userAddress) {
-          return res.status(403).json({result : "이미 사용된 학번입니다."});
+      const [studentResults] : [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(
+        `SELECT * 
+        FROM MYYONSEINFT.userInfo 
+        WHERE studentNumber = ?`
+      , [studentNumber]);
+
+      if (studentResults.length !== 0  && studentResults[0].address !== userAddress) {
+        return res.status(403).json({result : "이미 사용된 학번입니다."});
       }
   
-      const query = `
-      INSERT INTO MYYONSEINFT.userInfo
-      (userAddress, studentNumber, maxMintableNumber, ownedNFTNumber, friendAddress, major)
-      VALUES(?, ?, 1, 0, '', ?);`
-      await conn.query<nftInfo[]>(query, [userAddress, studentNumber, major]); // 파라미터화된 쿼리 사용
+      await conn.query<nftInfo[]>(
+        `INSERT INTO MYYONSEINFT.userInfo
+        (userAddress, studentNumber, maxMintableNumber, ownedNFTNumber, friendAddress, major)
+        VALUES(?, ?, 1, 0, '', ?);`
+      , [userAddress, studentNumber, major]); // 파라미터화된 쿼리 사용
+      // await conn.query<nftInfo[]>(query, [userAddress, studentNumber, major, userAddress, userAddress]); // 파라미터화된 쿼리 사용
   
       res.status(200).json({ result : "SUCCESS" });
     } catch (error : any) {
@@ -79,13 +79,14 @@ export default class UserController {
       const { userAddress, friendNumber } = req.body;
   
       //CHECK Do NOT HAVE FRIEND
-      const meQuery = `
-      SELECT * 
-      FROM MYYONSEINFT.userInfo 
-      WHERE userAddress = ?`;
   
       // 쿼리 실행 및 결과 타입 명시
-      const [meResult]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(meQuery, [userAddress]);
+      const [meResult]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(
+        `SELECT * 
+        FROM MYYONSEINFT.userInfo 
+        WHERE userAddress = ?`
+      , [userAddress]);
+
       // 결과 배열에서 첫 번째 요소의 friend 속성 접근
       if (meResult.length === 0) {
         return res.status(403).json({result : "USER 등록이 안된 사용자입니다."})
@@ -95,13 +96,13 @@ export default class UserController {
       }
   
       //CHECK Do NOT HAVE FRIEND
-      const friendQuery = `
-      SELECT friendAddress 
-      FROM userInfo 
-      WHERE studentNumber = ?`;
   
       // 쿼리 실행 및 결과 타입 명시
-      const [freindResult]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(friendQuery, [friendNumber]);
+      const [freindResult]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(
+        `SELECT friendAddress 
+        FROM userInfo 
+        WHERE studentNumber = ?`
+      , [friendNumber]);
   
       // 결과 배열에서 첫 번째 요소의 friend 속성 접근
       if (freindResult.length === 0) {
@@ -111,15 +112,15 @@ export default class UserController {
         return res.status(403).json({result : "친구가 이미 친구 이벤트에 참가하셨습니다."})
       }
   
-      const checkQuery = `
-      SELECT a.tokenURI, a.ownerAddress as myAddress, b.ownerAddress as friendAddress
-      FROM NFTs a
-      JOIN NFTs b ON a.tokenURI = b.tokenURI AND a.ownerAddress != b.ownerAddress
-      JOIN userInfo me ON me.userAddress = a.ownerAddress
-      JOIN userInfo friend ON friend.userAddress = b.ownerAddress
-      WHERE me.userAddress = ? AND friend.studentNumber = ?
-    `;
-      const [results]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(checkQuery, [userAddress, friendNumber]);
+      const [results]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(
+        `SELECT a.tokenURI, a.ownerAddress as myAddress, b.ownerAddress as friendAddress
+        FROM NFTs a
+        JOIN NFTs b ON a.tokenURI = b.tokenURI AND a.ownerAddress != b.ownerAddress
+        JOIN userInfo me ON me.userAddress = a.ownerAddress
+        JOIN userInfo friend ON friend.userAddress = b.ownerAddress
+        WHERE me.userAddress = ? AND friend.studentNumber = ?`
+    , [userAddress, friendNumber]);
+
       if (results.length > 0) {
         try {
           const friendUserAddress = results[0].friendAddress;
