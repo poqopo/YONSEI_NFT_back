@@ -39,7 +39,7 @@ app.post('/registerFriend', userController.registerFriend)
 
 
 // NFT API
-app.get('/getNFTsByUser', nftController.getNFTsByUser)
+app.get('/getNFTsByUserAddress', nftController.getNFTsByUserAddress)
 
 app.get('/getNFTInfos', nftController.getNFTInfos)
 

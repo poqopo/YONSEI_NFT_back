@@ -59,20 +59,20 @@ async function makeNFT(address: string, uri: string, _nonce: string) {
 
 
 export default class NFTController {
-  async getNFTsByUser(req: Request, res: Response, next: NextFunction) {
+  async getNFTsByUserAddress(req: Request, res: Response, next: NextFunction) {
     try {
       const { userAddress } = req.query;
       const conn = await pool(); // 데이터베이스 연결을 비동기로 처리
   
-      const [results]: [NFT[], FieldPacket[]] = await conn.query<NFT[]>(
-        `SELECT NFTs.tokenURI, NFTInfo.nftName, NFTInfo.description 
+      const [nftsResults]: [NFT[], FieldPacket[]] = await conn.query<NFT[]>(
+        `SELECT NFTs.txId, NFTs.tokenURI, NFTs.ownerAddress, NFTs.tokenId, NFTs.collectionAddress, NFTInfo.major, NFTInfo.nftName, NFTInfo.description 
         FROM MYYONSEINFT.NFTs
         JOIN MYYONSEINFT.NFTInfo 
         ON NFTs.tokenURI = NFTInfo.tokenURI 
         WHERE NFTs.ownerAddress = ?;`
       , [userAddress]);
   
-      res.status(200).json({ results });
+      res.status(200).json({ nftsResults });
     } catch (error : any) {
       console.error('Error while writing NFT info:', error.message); // 콘솔에 에러 메시지 출력
       res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
