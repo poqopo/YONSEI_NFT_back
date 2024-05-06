@@ -103,9 +103,7 @@ export default class NFTController {
 
       await conn.query<NFTInfo[]>(
         `INSERT INTO MYYONSEINFT.NFTInfo (major, tokenURI, nftName, description)
-        VALUES (?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-        tokenURI = VALUES(tokenURI), nftName = VALUES(nftName), description= VALUES(description);`
+        VALUES (?, ?, ?, ?)`
       , [major, tokenURI, nftName, description]); // 파라미터화된 쿼리 사용
 
       conn.end();
