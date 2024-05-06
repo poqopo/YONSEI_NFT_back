@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction, response } from "express";
 import pool from "../config/database";
 import { FieldPacket } from "mysql2/promise";
-import { userInfo, Params, nftInfo, friendInfo, nft } from "../config/type";
+import { userInfo, Params, nftInfo,  nft } from "../config/type";
 
 export default class UserController {
 
@@ -85,7 +85,7 @@ export default class UserController {
       WHERE userAddress = ?`;
   
       // 쿼리 실행 및 결과 타입 명시
-      const [meResult]: [friendInfo[], FieldPacket[]] = await conn.query<friendInfo[]>(meQuery, [userAddress]);
+      const [meResult]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(meQuery, [userAddress]);
       // 결과 배열에서 첫 번째 요소의 friend 속성 접근
       if (meResult.length === 0) {
         return res.status(403).json({result : "USER 등록이 안된 사용자입니다."})
@@ -101,7 +101,7 @@ export default class UserController {
       WHERE studentNumber = ?`;
   
           // 쿼리 실행 및 결과 타입 명시
-      const [freindResult]: [friendInfo[], FieldPacket[]] = await conn.query<friendInfo[]>(friendQuery, [friendNumber]);
+      const [freindResult]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(friendQuery, [friendNumber]);
   
           // 결과 배열에서 첫 번째 요소의 friend 속성 접근
       if (freindResult.length === 0) {

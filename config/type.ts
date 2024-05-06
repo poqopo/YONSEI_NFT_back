@@ -7,13 +7,12 @@ export interface Params {
 
   
 export interface userInfo extends RowDataPacket {
-    address: string
+    userAddress: string
     studentNumber: string
-    maxMintCount: number
-    nftCount: number
-    friend : string
-    participateEvent : number
-    claim : number
+    maxMintableNumber: number
+    ownedNFTNumber: number
+    friendAddress : string
+    major : string
 }
 
 export interface nft extends RowDataPacket {
@@ -29,14 +28,6 @@ export interface nftInfo extends RowDataPacket {
 }
 
 export interface claimInfo extends RowDataPacket {
-  claim : number
-}
-
-export interface friendInfo extends RowDataPacket {
-  address: string
-  studentNumber: string
-  friend : string
-  participateEvent : number
   claim : number
 }
 

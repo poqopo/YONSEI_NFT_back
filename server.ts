@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 import Web3 from "web3";
 import { FieldPacket } from "mysql2/promise";
 import pool from "./config/database";
-import { userInfo, Params, nftInfo, friendInfo, nft } from "./config/type";
+import { userInfo, Params, nftInfo, nft } from "./config/type";
 import UserController from "./controllers/user"
 import NFTController from "./controllers/nft";
 
