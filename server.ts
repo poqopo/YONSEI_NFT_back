@@ -78,7 +78,11 @@ app.get('/getUserByAddress', async (req: Request, res: Response, next: NextFunct
   try {
     const { userAddress } = req.query;
     const conn = await pool(); // 데이터베이스 연결을 비동기로 처리
-    const query = `SELECT * FROM MYYONSEINFT.userInfo WHERE userAddress = ?`
+    const query = `
+    SELECT * 
+    FROM MYYONSEINFT.userInfo 
+    WHERE userAddress = ?
+    `
 
     const [results]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(query, [userAddress]);
     res.status(200).json({ results });
@@ -93,10 +97,13 @@ app.get('/getUserByNumber', async (req: Request, res: Response, next: NextFuncti
   try {
     const { studentNumber } = req.query;
     const conn = await pool(); // 데이터베이스 연결을 비동기로 처리
-    const query = `SELECT * FROM MYYONSEINFT.userInfo WHERE studentNumber = ?`
+    const query = `
+    SELECT * 
+    FROM MYYONSEINFT.userInfo 
+    WHERE studentNumber = ?
+    `
 
     const [results]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(query, [studentNumber]);
-
     res.status(200).json({ results });
 } catch (error : any) {
   console.error('Error while writing NFT info:', error.message); // 콘솔에 에러 메시지 출력
@@ -109,8 +116,12 @@ app.get('/getUserNFTs', async (req: Request, res: Response, next: NextFunction) 
   try {
     const { userAddress } = req.query;
     const conn = await pool(); // 데이터베이스 연결을 비동기로 처리
-    const query = `SELECT NFTs.tokenURI, NFTInfo.nftName, NFTInfo.description FROM MYYONSEINFT.NFTs
-    JOIN MYYONSEINFT.NFTInfo ON NFTs.tokenURI = NFTInfo.tokenURI WHERE NFTs.ownerAddress = ?;`
+    const query = `
+    SELECT NFTs.tokenURI, NFTInfo.nftName, NFTInfo.description 
+    FROM MYYONSEINFT.NFTs
+    JOIN MYYONSEINFT.NFTInfo 
+    ON NFTs.tokenURI = NFTInfo.tokenURI 
+    WHERE NFTs.ownerAddress = ?;`
 
     const [results]: [nft[], FieldPacket[]] = await conn.query<nft[]>(query, [userAddress]);
 
@@ -125,7 +136,10 @@ app.get('/getUserNFTs', async (req: Request, res: Response, next: NextFunction) 
 app.get('/getNFTInfos', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const conn = await pool(); // 데이터베이스 연결을 비동기로 처리
-    const query = `SELECT * FROM MYYONSEINFT.NFTInfo;`
+    const query = `
+    SELECT * 
+    FROM MYYONSEINFT.NFTInfo;
+    `
 
     const [results]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(query);
 
@@ -141,7 +155,8 @@ app.post('/writeNFTInfo', async (req: Request, res: Response, next: NextFunction
   try {
     const { major, tokenURI, nftName, description } = req.body; 
     const conn = await pool();
-    const query = `INSERT INTO MYYONSEINFT.NFTInfo (major, tokenURI, nftName, description)
+    const query = `
+    INSERT INTO MYYONSEINFT.NFTInfo (major, tokenURI, nftName, description)
     VALUES (?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE
     tokenURI = VALUES(tokenURI), nftName = VALUES(nftName), description= VALUES(description);`
@@ -161,13 +176,18 @@ app.post('/addNewUser', async (req: Request, res: Response, next: NextFunction) 
     const conn = await pool();
 
       // Check studentNumber
-    const studentQuery = `SELECT * FROM MYYONSEINFT.userInfo WHERE studentNumber = ?`
+    const studentQuery = `
+    SELECT * 
+    FROM MYYONSEINFT.userInfo 
+    WHERE studentNumber = ?
+    `
       const [studentResults] : [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(studentQuery, [studentNumber]);
       if (studentResults.length !== 0  && studentResults[0].address !== userAddress) {
         return res.status(403).json({result : "이미 사용된 학번입니다."});
     }
 
-    const query = `INSERT INTO MYYONSEINFT.userInfo
+    const query = `
+    INSERT INTO MYYONSEINFT.userInfo
     (userAddress, studentNumber, maxMintableNumber, ownedNFTNumber, friendAddress, major)
     VALUES(?, ?, 1, 0, '', ?);`
     await conn.query<nftInfo[]>(query, [userAddress, studentNumber, major]); // 파라미터화된 쿼리 사용
@@ -191,7 +211,11 @@ app.post('/mint', async (req: Request, res: Response, next: NextFunction) => {
           return res.status(400).json({result : "NOT VALID ADDRESS"});
       }
 
-      const userQuery = `SELECT maxMintableNumber, ownedNFTNumber FROM MYYONSEINFT.userInfo WHERE userAddress = ?`
+      const userQuery = `
+      SELECT maxMintableNumber, ownedNFTNumber 
+      FROM MYYONSEINFT.userInfo 
+      WHERE userAddress = ?
+      `
       const [userResults] : [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(userQuery, [userAddress]);
 
       // Check MaxCap
@@ -199,7 +223,11 @@ app.post('/mint', async (req: Request, res: Response, next: NextFunction) => {
           return res.status(403).json({result : "이미 팜희가 너무 많아요!"});
       }
 
-      const majorQuery = `SELECT * FROM MYYONSEINFT.NFTInfo WHERE major = ?`
+      const majorQuery = `
+      SELECT * 
+      FROM MYYONSEINFT.NFTInfo 
+      WHERE major = ?
+      `
       const [results] : [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(majorQuery, [major]);
 
       // Check VALID MAJOR
@@ -213,9 +241,11 @@ app.post('/mint', async (req: Request, res: Response, next: NextFunction) => {
         makeNFT(userAddress, tokenuri, nonce.toString()).then(async (result : any) =>{
           const tx = result.logs[0].transactionHash
           const tokenId = (Number(result.events.Transfer.returnValues.tokenId))
-          const nftQuery = `INSERT INTO MYYONSEINFT.NFTs
+          const nftQuery = `
+          INSERT INTO MYYONSEINFT.NFTs
           (txId, ownerAddress, major, tokenURI, createdAt, tokenId, collectionAddress)
-          VALUES(?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?);`;
+          VALUES(?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?);
+          `;
           await conn.query(nftQuery, [tx, userAddress, major, tokenuri, tokenId, process.env.CONTRACT]);
           try{
             const userQuery = `UPDATE MYYONSEINFT.userInfo SET ownedNFTNumber = ${userResults[0].ownedNFTNumber +1 } WHERE userAddress=?;`
@@ -244,7 +274,10 @@ app.post('/registerFriend', async (req: Request, res: Response, next: NextFuncti
     const { userAddress, friendNumber } = req.body;
 
     //CHECK Do NOT HAVE FRIEND
-    const meQuery = `SELECT * FROM MYYONSEINFT.userInfo WHERE userAddress = ?`;
+    const meQuery = `
+    SELECT * 
+    FROM MYYONSEINFT.userInfo 
+    WHERE userAddress = ?`;
 
     // 쿼리 실행 및 결과 타입 명시
     const [meResult]: [friendInfo[], FieldPacket[]] = await conn.query<friendInfo[]>(meQuery, [userAddress]);
@@ -257,7 +290,10 @@ app.post('/registerFriend', async (req: Request, res: Response, next: NextFuncti
     }
 
         //CHECK Do NOT HAVE FRIEND
-    const friendQuery = `SELECT friendAddress FROM userInfo WHERE studentNumber = ?`;
+    const friendQuery = `
+    SELECT friendAddress 
+    FROM userInfo 
+    WHERE studentNumber = ?`;
 
         // 쿼리 실행 및 결과 타입 명시
     const [freindResult]: [friendInfo[], FieldPacket[]] = await conn.query<friendInfo[]>(friendQuery, [friendNumber]);
