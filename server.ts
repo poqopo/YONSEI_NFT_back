@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 import Web3 from "web3";
 import { FieldPacket } from "mysql2/promise";
 import pool from "./config/database";
-import { userInfo, Params, nftInfo, friendInfo } from "./config/type";
+import { userInfo, Params, nftInfo, friendInfo, nft } from "./config/type";
 
 dotenv.config();
 
@@ -112,7 +112,7 @@ app.get('/getUserNFTs', async (req: Request, res: Response, next: NextFunction) 
     const query = `SELECT NFTs.tokenURI, NFTInfo.nftName, NFTInfo.description FROM MYYONSEINFT.NFTs
     JOIN MYYONSEINFT.NFTInfo ON NFTs.tokenURI = NFTInfo.tokenURI WHERE NFTs.ownerAddress = ?;`
 
-    const [results]: [userInfo[], FieldPacket[]] = await conn.query<userInfo[]>(query, [userAddress]);
+    const [results]: [nft[], FieldPacket[]] = await conn.query<nft[]>(query, [userAddress]);
 
     res.status(200).json({ results });
 } catch (error : any) {

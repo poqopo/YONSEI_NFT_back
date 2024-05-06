@@ -16,6 +16,12 @@ export interface userInfo extends RowDataPacket {
     claim : number
 }
 
+export interface nft extends RowDataPacket {
+  tokenURI : string
+  nftName : string
+  description : string
+}
+
 export interface nftInfo extends RowDataPacket {
   major: string
   baseURI: string
