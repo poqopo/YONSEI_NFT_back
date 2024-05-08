@@ -4,8 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node server.ts",
-    "dev": "nodemon -x ts-node server.ts"
+
+    "devstart" : "NODE_ENV=development ts-node server.ts ",
+    "start": " NODE_ENV=production ts-node server.ts",
+    "dev": "NODE_ENV=development nodemon -x ts-node server.ts"
   },
   "engines": {
     "node": "v14.16.1",

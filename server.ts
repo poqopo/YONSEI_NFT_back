@@ -9,11 +9,23 @@ import { UserInfo, Params, NFTInfo, NFT } from "./config/type";
 import UserController from "./controllers/user"
 import NFTController from "./controllers/nft";
 
-dotenv.config();
+let path;
+switch (process.env.NODE_ENV) {
+  case "development":
+    path = `~/YONSEI_NFT_back/.env.development`;
+    break;
+  case "production":
+    path = `~/YONSEI_NFT_back/.env.production`;
+    break;
+  default:
+    path = `~/YONSEI_NFT_back/.env.development`;
+}
+dotenv.config({ path: path })
+console.log(process.env.PORT)
 
 const app = express();
 const cors = require("cors");
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 
 app.use(cors());
 app.use(express.urlencoded({ extended: false }));

@@ -6,7 +6,19 @@ import dotenv from "dotenv";
 import Web3 from "web3";
 import contractAbi from "../abi.json";
 
-dotenv.config();
+let path;
+switch (process.env.NODE_ENV) {
+  case "development":
+    path = `~/YONSEI_NFT_back/.env.development`;
+    break;
+  case "production":
+    path = `~/YONSEI_NFT_back/.env.production`;
+    break;
+  default:
+    path = `~/YONSEI_NFT_back/.env.development`;
+}
+dotenv.config({ path: path })
+
 
 // https://sepolia.infura.io/v3/
 // https://polygon-mainnet.infura.io/v3/
@@ -43,7 +55,7 @@ async function makeNFT(address: string, uri: string, _nonce: string) {
     const result = await nftContract.methods.safeMint(address, uri).send({
       from: account.address,
       gas: `0x${gas.toString(16)}`,
-      gasPrice: `0x${Math.floor(parseInt(gasPrice.toString()) * 1.2).toString(16)}`,
+      gasPrice: `0x${Math.floor(parseInt(gasPrice.toString()) * 1.5).toString(16)}`,
       nonce: _nonce,
     });
 
@@ -63,8 +75,8 @@ export default class NFTController {
   
       const [nftsResults]: [NFT[], FieldPacket[]] = await conn.query<NFT[]>(
         `SELECT NFTs.txId, NFTs.tokenURI, NFTs.ownerAddress, NFTs.tokenId, NFTs.collectionAddress, NFTInfo.major, NFTInfo.nftName, NFTInfo.description 
-        FROM MYYONSEINFT.NFTs
-        JOIN MYYONSEINFT.NFTInfo 
+        FROM NFTs
+        JOIN NFTInfo 
         ON NFTs.tokenURI = NFTInfo.tokenURI 
         WHERE NFTs.ownerAddress = ?;`
       , [userAddress]);
@@ -83,8 +95,7 @@ export default class NFTController {
       const conn = await pool(); // 데이터베이스 연결을 비동기로 처리
   
       const [results]: [NFTInfo[], FieldPacket[]] = await conn.query<NFTInfo[]>(
-        `SELECT * 
-        FROM MYYONSEINFT.NFTInfo;`
+        `SELECT * FROM NFTInfo;`
       );
   
       conn.end();
@@ -102,7 +113,7 @@ export default class NFTController {
       const conn = await pool();
 
       await conn.query<NFTInfo[]>(
-        `INSERT INTO MYYONSEINFT.NFTInfo (major, tokenURI, nftName, description)
+        `INSERT INTO NFTInfo (major, tokenURI, nftName, description)
         VALUES (?, ?, ?, ?)`
       , [major, tokenURI, nftName, description]); // 파라미터화된 쿼리 사용
 
@@ -126,7 +137,7 @@ export default class NFTController {
 
       const [userInfoResults] : [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
         `SELECT * 
-        FROM MYYONSEINFT.userInfo 
+        FROM userInfo 
         WHERE userAddress = ?`
       , [userAddress]);
 
@@ -142,7 +153,7 @@ export default class NFTController {
 
       const [nftInfoResults] : [NFTInfo[], FieldPacket[]] = await conn.query<NFTInfo[]>(
         `SELECT * 
-        FROM MYYONSEINFT.NFTInfo 
+        FROM NFTInfo 
         WHERE major = ?`
       , [major]);
 
@@ -160,13 +171,13 @@ export default class NFTController {
         const tokenId = (Number(result.events.Transfer.returnValues.tokenId))
 
         await conn.query(
-          `INSERT INTO MYYONSEINFT.NFTs
+          `INSERT INTO NFTs
           (txId, ownerAddress, tokenURI, createdAt, tokenId, collectionAddress)
           VALUES(?, ?, ?, CURRENT_TIMESTAMP, ?, ?);`
         , [tx, userAddress, tokenuri, tokenId, process.env.CONTRACT]);
 
         await conn.query(
-          `UPDATE MYYONSEINFT.userInfo 
+          `UPDATE userInfo 
           SET ownedNFTNumber = ${userInfo.ownedNFTNumber +1 } 
           WHERE userAddress=?;`
         , [userAddress]);
