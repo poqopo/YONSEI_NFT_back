@@ -12,7 +12,7 @@ export default class UserController {
 
       const [results]: [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
         `SELECT * 
-        FROM MYYONSEINFT.userInfo 
+        FROM userInfo 
         WHERE userAddress = ?`
       , [userAddress]);
 
@@ -32,7 +32,7 @@ export default class UserController {
   
       const [results]: [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
         `SELECT * 
-        FROM MYYONSEINFT.userInfo 
+        FROM userInfo 
         WHERE studentNumber = ?`
       , [studentNumber]);
 
@@ -52,7 +52,7 @@ export default class UserController {
   
       const [userInfos] : [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
         `SELECT * 
-        FROM MYYONSEINFT.userInfo 
+        FROM userInfo 
         WHERE studentNumber = ?`
       , [studentNumber]);
 
@@ -67,7 +67,7 @@ export default class UserController {
       }
   
       await conn.query<NFTInfo[]>(
-        `INSERT INTO MYYONSEINFT.userInfo
+        `INSERT INTO userInfo
         (userAddress, studentNumber, maxMintableNumber, ownedNFTNumber, friendAddress, major)
         VALUES(?, ?, 1, 0, ?, ?);`
       , [userAddress, studentNumber, null, major]); // userInfo 추가 쿼리
@@ -91,7 +91,7 @@ export default class UserController {
       // 자신의 user info 체크
       const [myUserInfoResult]: [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
         `SELECT * 
-        FROM MYYONSEINFT.userInfo 
+        FROM userInfo 
         WHERE userAddress = ?`
       , [userAddress]);
 
@@ -102,11 +102,14 @@ export default class UserController {
       if (myUserInfo.friendAddress !== null) {
         return res.status(403).json({result : "이미 친구 이벤트에 참여하였습니다."})
       }
+      if (myUserInfo.studentNumber === friendStudentNumber) {
+        return res.status(403).json({result : "나의 학번입니다."})
+      }
   
       // 친구의 user info 체크
       const [friendUserInfoResult]: [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
         `SELECT * 
-        FROM MYYONSEINFT.userInfo 
+        FROM userInfo 
         WHERE studentNumber = ?`
       , [friendStudentNumber]);
 
@@ -121,7 +124,7 @@ export default class UserController {
       // 독팜희를 분양했는지 체크
       const [myNFTs]: [NFT[], FieldPacket[]] = await conn.query<NFT[]>(
         `SELECT *
-        FROM MYYONSEINFT.NFTs
+        FROM NFTs
         WHERE ownerAddress = ?`
       , [myUserInfo.userAddress]);
 
@@ -131,7 +134,7 @@ export default class UserController {
 
       const [friendNFTs]: [NFT[], FieldPacket[]] = await conn.query<NFT[]>(
         `SELECT *
-        FROM MYYONSEINFT.NFTs
+        FROM NFTs
         WHERE ownerAddress = ?`
       , [friendUserInfo.userAddress]);
 
