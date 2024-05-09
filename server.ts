@@ -47,6 +47,8 @@ app.get('/getUserByNumber', userController.getUserByNumber)
 
 app.post('/addNewUser', userController.addNewUser)
 
+app.post('/editTattoInfo', userController.editTattoInfo)
+
 app.post('/registerFriend', userController.registerFriend)
 
 

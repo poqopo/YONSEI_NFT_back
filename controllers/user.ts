@@ -57,10 +57,20 @@ export default class UserController {
       , [studentNumber]);
 
       if (userInfos.length > 1) {
-        return res.status(500).json({result: "2개 이상 있으면 안 되는데... 이상한데...?"}); // 일단 status code 뭐로 할지 몰라서 500대로...
+        return res.status(500).json({result: "이미 등록된 유저입니다."}); // 일단 status code 뭐로 할지 몰라서 500대로...
       }
       if (userInfos.length === 1 && userInfos[0].studentNumber === studentNumber) {
-        return res.status(403).json({result : "이미 사용된 학번입니다."});
+        if (userInfos[0].userAddress === null) {
+          await conn.query<UserInfo[]>(
+            `UPDATE userInfo 
+            SET userAddress = ? , major = ?
+            WHERE studentNumber = ?`
+          , [userAddress, major, studentNumber]);
+          return res.status(200).json({ result : "SUCCESS" });
+
+        } else {
+          return res.status(403).json({result : "이미 사용된 학번입니다."});
+        }
       }
       if (userInfos.length === 1 && userInfos[0].userAddress === userAddress) {
         return res.status(403).json({result : "이미 사용된 지갑 주소입니다."});
@@ -80,6 +90,45 @@ export default class UserController {
       return res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
     }
   }
+
+  async editTattoInfo(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { studentNumber, count } = req.body; 
+      const conn = await pool();
+  
+      const [userInfos] : [UserInfo[], FieldPacket[]] = await conn.query<UserInfo[]>(
+        `SELECT * 
+        FROM userInfo 
+        WHERE studentNumber = ? `
+      , [studentNumber]);
+
+      if (userInfos.length > 1) {
+        return res.status(500).json({result: "중복된 유저입니다."}); // 일단 status code 뭐로 할지 몰라서 500대로...
+      } else if (userInfos.length === 1 && userInfos[0].studentNumber === studentNumber) {
+          await conn.query<UserInfo[]>(
+            `UPDATE userInfo 
+            SET maxMintableNumber = ?
+            WHERE studentNumber = ?`
+          , [userInfos[0].maxMintableNumber + count, userInfos[0].studentNumber]);
+          conn.end();
+          return res.status(200).json({ result : "SUCCESS" });
+      } else {
+          await conn.query<NFTInfo[]>(
+            `INSERT INTO userInfo
+            (userAddress, studentNumber, maxMintableNumber, ownedNFTNumber, friendAddress, major)
+            VALUES(?, ?, ?, 0, ?, ?);`
+            , [null, studentNumber, 1 + count, null, null]);
+          conn.end();
+          return res.status(200).json({ result : "SUCCESS" });
+      }
+
+    } catch (error : any) {
+      console.error('Error while writing userinfo:', error.message); // 콘솔에 에러 메시지 출력
+      next(error);
+      return res.status(403).json({ result: "FAIL", message: error.message }); // 클라이언트에게 에러 메시지 전송
+    }
+  }
+  
   
   async registerFriend(req: Request, res: Response, next: NextFunction) {
     try {
@@ -129,7 +178,7 @@ export default class UserController {
       , [myUserInfo.userAddress]);
 
       if (myNFTs.length === 0) {
-        return res.status(403).json({result : "나의 독팜희가 없습니다. 새로 독팜희를 분양하세요."})
+        return res.status(403).json({result : "나의 독팜희가 없습니다. 먼저 독팜희를 받아주세요!."})
       }
 
       const [friendNFTs]: [NFT[], FieldPacket[]] = await conn.query<NFT[]>(
@@ -139,7 +188,7 @@ export default class UserController {
       , [friendUserInfo.userAddress]);
 
       if (friendNFTs.length === 0) {
-        return res.status(403).json({result : "친구의 독팜희가 없습니다. 새로 독팜희를 분양하라고 하세요."})
+        return res.status(403).json({result : "친구가 아직 독팜희를 받지 않았어요."})
       }
   
       // 내가 가진 NFT와 친구가 가진 NFT 중에서 같은 NFT가 있는지 확인
