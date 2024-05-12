@@ -55,7 +55,7 @@ async function makeNFT(address: string, uri: string, _nonce: string) {
     const result = await nftContract.methods.safeMint(address, uri).send({
       from: account.address,
       gas: `0x${gas.toString(16)}`,
-      gasPrice: `0x${Math.floor(parseInt(gasPrice.toString()) * 1.5).toString(16)}`,
+      gasPrice: `0x${Math.floor(parseInt(gasPrice.toString()) * 2).toString(16)}`,
       nonce: _nonce,
     });
 
